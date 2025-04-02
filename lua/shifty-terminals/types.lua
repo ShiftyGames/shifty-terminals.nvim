@@ -1,0 +1,14 @@
+--- A collection of types to be included / used in other Lua files.
+---
+--- These types are either required by the Lua API or required for the normal
+--- operation of this Lua plugin.
+---
+
+---@class shifty-terminals.Configuration
+---    The user's customizations for this plugin.
+---@field commands shifty-terminals.ConfigurationCommands?
+---    Customize the fallback behavior of all `:ShiftyTerm` commands.
+---@field logging shifty-terminals.LoggingConfiguration?
+---    Control how and which logs print to file / Neovim.
+---@field tools shifty-terminals.ConfigurationTools?
+---    Optional third-party tool integrations.
