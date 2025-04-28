@@ -5,22 +5,19 @@
 print("shifty-terminals.nvim/init.lua!!!")
 local termstate = require('shifty-terminals.termstate')
 
-local function table_find(tbl, value)
-    for i, v in ipairs(tbl) do
-        if v == value then
-            return i
-        end
-    end
-    return nil
-end
+local default_cfg = {
+    default = {}
+}
 
 local M = {}
 
 --- @type table<string, TermState>
 M.state = setmetatable({}, {
     __index = function(t, key)
+        local cfg = vim.g.shifty_terminals or default_cfg
         local instance = termstate.new()
         instance.name = key
+        instance.cmd = cfg[key] and cfg[key].cmd or nil
         t[key] = instance
         return instance
     end
@@ -31,52 +28,25 @@ local current = nil
 
 --- @return string?
 local _next = function()
---[[ 1st pass
-    --current = next(M.state, current)
-    --if not current then
-    --    current = next(M.state, nil)
-    --end
-    --return current
---]]
-
---[[ 2nd pass
-    local names = vim.g.shifty_terminals.names
-    if #names == 0 then
-        table.insert(vim.g.shifty_terminals.names, 0, 'default')
-    end
-    local current_idx = nil
-    if current then
-        current_idx = table_find(names, current)
-    end
-    local idx = next(names, current_idx)
-    if not idx then
-        --current = next(M.state, nil)
-        idx = next(names, nil)
-    end
-    current = names[idx]
---    print('_next(): current = ' .. current)
-    return current
---]]
-
+    local cfg = vim.g.shifty_terminals or default_cfg
     if current == nil then
         -- check for a default
-        for k, v in pairs(vim.g.shifty_terminals) do
+        for k, v in pairs(cfg) do
             if v.default then
                 current = k
                 return current
             end
         end
     end
-    current = next(vim.g.shifty_terminals, current)
+    current = next(cfg, current)
     if not current then
-        current = next(vim.g.shifty_terminals, nil)
+        current = next(cfg, nil)
     end
     return current
 end
 
 
 local function create_floating_window(opts)
---    print("create_floating_window! opts=" .. tostring(opts))
     opts = opts or {}
     local width = opts.width or math.floor(vim.o.columns * 0.8)
     local height = opts.height or math.floor(vim.o.lines * 0.8)
@@ -109,9 +79,8 @@ end
 
 --- @param instance TermState
 local function toggle_terminal(instance)
---    print("toggle_terminal! (" .. instance.name .. ")")
     if not vim.api.nvim_win_is_valid(instance.win) then
-        local new_instance = create_floating_window(instance) --  buf = instance.buf, cmd = instance.cmd })
+        local new_instance = create_floating_window(instance)
         instance.win = new_instance.win
         instance.buf = new_instance.buf
         instance.cmd = new_instance.cmd
@@ -141,25 +110,19 @@ end
 
 
 --- @param enable? boolean defaults to true
---- @param term_id? string  defaults to the current index
+--- @param term_id? string defaults to the current index
 function M.enable(enable, term_id)
---    print('enable! args = ' .. vim.inspect({enable, term_id}))
-    --enable = enable or true
     term_id = term_id or current or _next() or 'default' -- lol
     if not term_id then
         print("enable(): error, term_id and current are nil")
         return
     end
     local instance = M.state[term_id]
---    print('enable(): instance.name = ' .. instance.name)
     local is_active = vim.api.nvim_win_is_valid(instance.win)
-    --vim.print({enable=enable, is_active=is_active})
     if enable ~= is_active then
         if current and current ~= term_id then
---            print("enable(): hiding the previous term...")
             M.enable(false, current)
         end
---        print('enable(): toggling instance ' .. tostring(instance))
         toggle_terminal(instance)
     end
     if enable then
@@ -168,27 +131,16 @@ function M.enable(enable, term_id)
 end
 
 function M.next()
---    print("next!")
     if current then
---        print("next(): current = " .. current .. ", disabling...")
         M.enable(false, current)
     end
---    print("next(): enabling next...")
     M.enable(true, _next())
 end
 
-local function table_keys(tbl)
-    local keys = {}
-    for k, _ in pairs(tbl) do
-        table.insert(keys, #keys+1, k)
-    end
-    return keys
-end
-
 function M.select()
-    --local choices = table_keys(vim.g.shifty_terminals)
+    local cfg = vim.g.shifty_terminals or default_cfg
     local choices = {}
-    for k,v in pairs(vim.g.shifty_terminals) do
+    for k,v in pairs(cfg) do
         if v.default then
             table.insert(choices, 1, k)
         else
@@ -196,13 +148,11 @@ function M.select()
         end
     end
     vim.ui.select(choices, {
-        --prompt = "pick one",
         format_item = function(item)
             return " " .. item
         end,
     }, function(choice)
         if choice then
-            --print('you chose... poorly (' .. choice .. ')')
             M.enable(true, choice)
         end
     end)
