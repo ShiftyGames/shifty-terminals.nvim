@@ -1,4 +1,5 @@
 -- USAGE:
+--  $Env:NVIM_APPNAME = 'nvim-test-terms'
 --  nvim -u ./scripts/test_drive.lua
 
 -- mkdir ~/.local/share/nvim-data/site/pack/dev/opt/
@@ -60,7 +61,7 @@ for name, type in vim.fs.dir('.', { depth = 10, }) do
     if type == 'file' then
         --vim.print(string.match(name, '%.git.*'))
         if string.match(name, '%.git.*') == nil then
-            --print('cp', name, vim.fs.joinpath(pkgpath, name))
+            print('cp   ', vim.fs.joinpath(pkgpath, name))
             copyFile(name, vim.fs.joinpath(pkgpath, name))
         end
     end
@@ -68,25 +69,18 @@ end
 
 vim.g.shifty_terminals = {
     beans = {},
-    test = {},
+    test = {
+        default = true,
+        cmd = "echo Hello",
+    },
     server = {},
 }
 
---local m = {
---    s = "out"
---}
---local function f(arg)
---    arg.s = "in"
---end
---print('m.s =', m.s)
---f(m)
---print('f(m) => s =', m.s)
-
 print("calling packadd...")
 vim.cmd [[packadd! shifty-terminals.nvim]]
-print("calling checkhealth")
-vim.cmd [[checkhealth shifty-terminals]]
-print("checkhealth complete")
+--print("calling checkhealth")
+--vim.cmd [[checkhealth shifty-terminals]]
+--print("checkhealth complete")
 
 
 print("set keymap...")
@@ -100,20 +94,10 @@ vim.keymap.set({ "t" },
 )
 vim.keymap.set({ "n" },
     '<localleader>t',
-    '<Plug>(ShiftyTerminalsEnable)'
+    '<Plug>(ShiftyTerminalsToggle)'
+)
+vim.keymap.set({ "n" },
+    '<localleader>s',
+    '<Plug>(ShiftyTerminalsSelect)'
 )
 print("----COMPLETE----")
-
---local shterms = require('shifty-terminals')
---print(shterms.items)
---
---vim.ui.select(shterms.items, {
---    prompt = "pick one",
---    format_item = function(item)
---        return "I want " .. item
---    end,
---}, function(choice)
---    if choice then
---        print('you chose... poorly (' .. choice .. ')')
---    end
---end)
