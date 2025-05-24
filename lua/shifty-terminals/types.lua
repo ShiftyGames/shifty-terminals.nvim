@@ -5,10 +5,15 @@
 ---
 
 ---@class shifty-terminals.Configuration
----    The user's customizations for this plugin.
----@field commands shifty-terminals.ConfigurationCommands?
----    Customize the fallback behavior of all `:ShiftyTerm` commands.
----@field logging shifty-terminals.LoggingConfiguration?
----    Control how and which logs print to file / Neovim.
----@field tools shifty-terminals.ConfigurationTools?
----    Optional third-party tool integrations.
+---    The configuration stored in vim.g.shifty_terminals
+---@field terms table<string, shifty-terminals.TermConfig>
+
+---@class shifty-terminals.TermConfig
+---@field cmd string? the command to execute upon opening the terminal
+---@field cwd string? the path to set the current working directory to before executing the cmd
+---@field default boolean?
+
+
+---@class shifty-terminals.state.WindowOpts
+---@field cmd string
+---@field cwd string

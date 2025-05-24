@@ -1,5 +1,9 @@
 local _PREFIX = 'ShiftyTerm'
 
+---@type shifty-terminals.Configuration
+vim.g.shifty_terminals = vim.g.shifty_terminals or
+    require('shifty-terminals.config').default_cfg()
+
 -- Command interface
 vim.api.nvim_create_user_command(_PREFIX,
     function(opts)

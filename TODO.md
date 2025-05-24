@@ -1,8 +1,9 @@
 Features:
 - [ ] add a 'cwd' field to set the directory of the shell before executing the command
-- [ ] update README.md
-- [ ] add more checks in health.check()
+- [x] update README.md
+- [x] add more checks in health.check()
 - [ ] add command-line completions for term names
+- [ ] add logging
 
 Bug Fixes:
 - [x] fix the handling of config changes after startup

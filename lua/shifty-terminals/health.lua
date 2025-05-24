@@ -10,26 +10,46 @@ local M = {}
 ---@param data shifty-terminals.Configuration? All extra customizations for this plugin.
 ---
 function M.check(data)
-    if not data or vim.tbl_isempty(data) then
-        local defaults = {} -- TODO
-        data = vim.g.shifty_terminals or {}
-        --data = vim.tbl_deep_extend("force", defaults, vim.g.shifty_terminals or {})
-        --data = configuration_.resolve_data(vim.g.plugin_template_configuration)
-    end
+    data = data or vim.g.shifty_terminals
 
-    --_LOGGER:debug("Running plugin-template health check.")
     vim.health.start("Configuration")
 
     local all_success = true
-    local success, result = pcall(vim.validate, "vim.g.shifty_terminals", vim.g.shifty_terminals, "table")
+    local success, result = pcall(
+        vim.validate,
+        "data|vim.g.shifty_terminals",
+        data,
+        "table"
+    )
     if not success then
         all_success = false
         vim.health.error(result or "")
     end
 
-    -- TODO: check that /if/ vim.g.shifty_terminals is defined, then one of the
-    -- terms is set as the 'default'
-    --local success, result = pcall(???)
+    if not data.terms then
+        all_success = false
+        vim.health.error(
+            'config table is missing a field named "terms"\n'
+            .. 'Expected a table of this form:\n'
+            .. vim.inspect(require('shifty-terminals.config').default_cfg()) .. '\n'
+            .. 'Your config table:\n'
+            .. vim.inspect(data)
+        )
+    end
+
+    if data.terms then
+        local default = nil
+        for k, v in pairs(data.terms) do
+            if v.default then
+                vim.health.ok("default term is defined: " .. k)
+                default = k
+            end
+        end
+        if not default then
+            all_success = false
+            vim.health.error('no default term is defined')
+        end
+    end
 
     if all_success then
         vim.health.ok("Your vim.g.shifty_terminals variable is great!")
