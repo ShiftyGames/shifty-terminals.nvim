@@ -1,4 +1,3 @@
-local config = require('shifty-terminals.config')
 
 ---@class shifty-terminals.TermState
 ---@field name string
@@ -6,30 +5,58 @@ local config = require('shifty-terminals.config')
 ---@field win number
 ---@field cmd string?
 ---@field cwd string?
+---@field oneshot boolean
 ---@field default boolean
-local TermState = {
+local TermState = {}
+
+local default_termstate = {
     name = "",
     buf = -1,
     win = -1,
     cmd = nil,
     cwd = nil,
+    oneshot = false,
     default = false,
 }
 
 TermState.__tostring = function(t)
     local s = t["name"] .. " = { "
     local sep = ""
-    for _, k in ipairs({ "buf", "win", "cmd", "cwd", "default" }) do
-        s = s .. sep .. k .. "=" .. (t[k] or "nil")
+    for _, k in ipairs({ "buf", "win", "cmd", "cwd", "oneshot", "default" }) do
+        s = s .. sep .. k .. "=" .. tostring(t[k])
         sep = ", "
     end
     return s .. " }"
 end
 
+local function new_mt(name)
+    assert(name, "table t must have a name!")
+    assert(type(name) == "string", "name must be a string")
+    return {
+        __tostring = TermState.__tostring,
+        __index = function(_, key)
+            if TermState[key] ~= nil then
+                return TermState[key]
+            end
+            if vim.g.shifty_terminals.terms ~= nil
+                and vim.g.shifty_terminals.terms[name] ~= nil
+                and vim.g.shifty_terminals.terms[name][key] ~= nil
+            then
+                return vim.g.shifty_terminals.terms[name][key]
+            else
+                return default_termstate[key]
+            end
+        end,
+    }
+end
+
+---@param name string
 ---@return shifty-terminals.TermState
-function TermState:new()
-    self.__index = self
-    return setmetatable({}, self)
+function TermState.new(name)
+    assert(name, "must provide a name")
+    assert(type(name) == "string", "name must be a string")
+    local instance = { name = name }
+    return setmetatable(instance, new_mt(name))
 end
 
 ---@param opts shifty-terminals.state.WindowOpts
@@ -56,7 +83,6 @@ function TermState:create_floating_window(opts)
         title = " " .. self.name,
         title_pos = 'center',
     })
-    self.cmd = opts.cmd
 end
 
 function TermState:hide()
@@ -66,29 +92,39 @@ function TermState:hide()
 end
 
 function TermState:show()
-    local cfg = config.get_cfg()[self.name]
     self:create_floating_window({
-        cwd = cfg.cwd,
-        cmd = cfg.cmd,
+        -- TODO: user configurable options
     })
-    vim.api.nvim_win_call(self.win, function()
-        if vim.bo[self.buf].buftype ~= "terminal" then
-            vim.cmd.term()
-            vim.keymap.set({ "t", "i", "n" }, "<ESC><ESC>",
-                function()
-                    self:hide()
-                end,
-                { buffer = true, }
-            )
+
+    vim.api.nvim_win_call(
+        self.win,
+        function()
+            local firstpass = false
+            if vim.bo[self.buf].buftype ~= "terminal" then
+                firstpass = true
+                vim.cmd.term()
+                vim.keymap.set(
+                    { "t", "i", "n" },
+                    "<ESC><ESC>",
+                    function()
+                        self:hide()
+                    end,
+                    { buffer = true, }
+                )
+            end
+            -- start in the terminal insert mode
+            local keys = vim.api.nvim_replace_termcodes("<ESC>A", true, false, true)
+            if self.cmd then
+                -- Launch the cmd. If oneshot is true, only run the cmd on the
+                -- first pass (the first time the window is opening)
+                if firstpass or not self.oneshot then
+                    local CR = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
+                    keys = keys .. self.cmd .. CR
+                end
+            end
+            vim.api.nvim_input(keys)
         end
-        -- start in the terminal insert mode
-        local keys = vim.api.nvim_replace_termcodes("<ESC>A", true, false, true)
-        if self.cmd then
-            local CR = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
-            keys = keys .. self.cmd .. CR
-        end
-        vim.api.nvim_input(keys)
-    end)
+    )
 end
 
 return TermState

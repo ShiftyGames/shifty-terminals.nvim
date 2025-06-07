@@ -74,7 +74,10 @@ vim.g.shifty_terminals = {
             default = true,
             cmd = "echo Hello",
         },
-        server = {},
+        server = {
+            cmd = "echo Running server",
+            oneshot = true,
+        },
     }
 }
 
@@ -92,7 +95,7 @@ vim.keymap.set({ "t" },
     '<localleader>n',
     '<C-\\><C-n><Plug>(ShiftyTerminalsNext)'
 )
-vim.keymap.set({ "n", "t" },
+vim.keymap.set({ "n" },
     '<leader>t',
     '<Plug>(ShiftyTerminalsToggle)'
 )

@@ -24,20 +24,6 @@ local _next = function()
     end
 end
 
-
----@param term_id? string defaults to the current index
-local function get_term_cmd(term_id)
-    term_id = term_id or current
-    if not term_id then
-        return nil
-    end
-    local cfg = config.get_cfg()
-    if not cfg[term_id] then
-        return nil
-    end
-    return cfg[term_id].cmd
-end
-
 ---@param term_id? string defaults to the current index
 function M.toggle(term_id)
     term_id = term_id or current or _next()
@@ -46,7 +32,6 @@ function M.toggle(term_id)
     if vim.api.nvim_win_is_valid(instance.win) then
         instance:hide()
     else
-        instance.cmd = get_term_cmd(term_id)
         instance:show()
         current = term_id
     end
@@ -66,7 +51,6 @@ function M.enable(enable, term_id)
         end
     end
     if enable and not is_next_active then
-        next_instance.cmd = get_term_cmd(term_id)
         next_instance:show()
         current = term_id
     end

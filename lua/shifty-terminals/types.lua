@@ -11,9 +11,11 @@
 ---@class shifty-terminals.TermConfig
 ---@field cmd string? the command to execute upon opening the terminal
 ---@field cwd string? the path to set the current working directory to before executing the cmd
+---@field oneshot boolean? true: run the command only once, false|nil: run the command every time the terminal is activated
 ---@field default boolean?
 
 
 ---@class shifty-terminals.state.WindowOpts
----@field cmd string
----@field cwd string
+--TODO: user configurable options
+---@field todo string?
+
