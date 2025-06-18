@@ -1,4 +1,3 @@
-
 ---@class shifty-terminals.TermState
 ---@field name string
 ---@field buf number
@@ -103,6 +102,14 @@ function TermState:show()
             if vim.bo[self.buf].buftype ~= "terminal" then
                 firstpass = true
                 vim.cmd.term()
+                vim.cmd.startinsert()
+                if self.cwd then
+                    vim.api.nvim_input(
+                        vim.api.nvim_replace_termcodes(
+                            "cd " .. self.cwd .. "<CR>",
+                            true, false, true)
+                    )
+                end
                 vim.keymap.set(
                     { "t", "i", "n" },
                     "<ESC><ESC>",
@@ -113,16 +120,15 @@ function TermState:show()
                 )
             end
             -- start in the terminal insert mode
-            local keys = vim.api.nvim_replace_termcodes("<ESC>A", true, false, true)
+            vim.cmd.startinsert()
             if self.cmd then
                 -- Launch the cmd. If oneshot is true, only run the cmd on the
                 -- first pass (the first time the window is opening)
                 if firstpass or not self.oneshot then
                     local CR = vim.api.nvim_replace_termcodes("<CR>", true, false, true)
-                    keys = keys .. self.cmd .. CR
+                    vim.api.nvim_input(self.cmd .. CR)
                 end
             end
-            vim.api.nvim_input(keys)
         end
     )
 end
